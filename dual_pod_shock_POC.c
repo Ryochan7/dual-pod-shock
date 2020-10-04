@@ -8,17 +8,19 @@
 #include <stdlib.h>
 #include <errno.h>
 
+#include "crc32.h"
+
 /* S E T T I N G S  D U A L - P O D - S H O C K  4 */
 #define _protocolID 0x15 /* Protocol ID */
 #define _modeType 0xc0 /* c0 Bluetooth Mode / a0 USB Mode */
 #define _transactionType 0xa0 /* Transaction Type is DATA (0xa0). Report Type is OUTPUT (0x02) */
 #define _featuresSwitch 0xf3 /* 0xf0 Disables LED and Rumble Motors. 0xf3 Enables All of Them */
-#define _powerRumbleRight 0x40 /* Power Rumble Right */
+#define _powerRumbleRight 0x00 /* Power Rumble Right */
 #define _powerRumbleLeft 0x00 /* Power Rumble Left */
 #define _flashON 0x00 /* LED Flash On */
 #define _flashOFF 0x00 /* LED Flash Off */
-#define _volLeft 0x00 /* Volume Headset Speaker Left */
-#define _volRight 0x00 /* Volume Headset Speaker Right */
+#define _volLeft 0x40 /* Volume Headset Speaker Left */
+#define _volRight 0x40 /* Volume Headset Speaker Right */
 #define _volMic	0x00 /* Volume Mic */
 #define _volSpeaker 0x98 /* Volume Built-in Speaker / 0x4d == Uppercase M (Mute?) */
 #define _R 0x10 /* Color Red */
@@ -60,7 +62,7 @@ int main(int argc, char **argv){
 	FILE *file = NULL;
 	file = fopen(SBCFile, "rb");
 	if (file != NULL){
-        		int lilEndianCounter = 0;
+		int lilEndianCounter = 0;
 		while ((bytesRead = fread(audioData, 1, sizeof(audioData), file)) > 0){
 			int indexBuffer = 81;
 			int indexAudioData = 0;
@@ -99,7 +101,8 @@ int main(int argc, char **argv){
 			buf[74] = 0x00; buf[75] = 0x00; buf[76] = 0x00; buf[77] = 0x00; /* End Empty Frames */
 			buf[78] = lilEndianCounter & 255; /* Audio frame counter (endian 1)*/
 			buf[79] = (lilEndianCounter / 256) & 255; /* Audio frame counter (endian 2) */
-			buf[80] = 0x02; /* 0x02 Speaker Mode On / 0x24 Headset Mode On*/
+			//buf[80] = 0x02; /* 0x02 Speaker Mode On / 0x24 Headset Mode On*/
+			buf[80] = 0x24; /* 0x02 Speaker Mode On / 0x24 Headset Mode On*/
 
 			// A U D I O  D A T A
 			for(indexAudioData = 0; indexAudioData < sizeof(audioData); indexAudioData++){
@@ -111,6 +114,17 @@ int main(int argc, char **argv){
 			buf[318] = 0x00; buf[319] = 0x00; buf[320] = 0x00; buf[321] = 0x00; buf[322] = 0x00; buf[323] = 0x00;
 			buf[324] = 0x00; buf[325] = 0x00; buf[326] = 0x00; buf[327] = 0x00; buf[328] = 0x00; buf[329] = 0x00; /* End Empty Frames */
 			buf[330] = 0x00; buf[331] = 0x00; buf[332] = 0x00; buf[333] = 0x00; /* CRC-32 */
+
+			// Generate CRC32 data for output buffer and add it to output report
+			uint8_t bthdr = 0xA2;
+			uint32_t crc = 0;
+			crc = crc32_le(0xFFFFFFFF, &bthdr, 1);
+			crc = ~crc32_le(crc, buf, 334-4);
+			buf[330] = crc;
+			buf[331] = crc >> 8;
+			buf[332] = crc >> 16;
+			buf[333] = crc >> 24;
+
 			res = write(fd, buf, bufferSize);
 
 			if (res < 0) {
@@ -121,6 +135,10 @@ int main(int argc, char **argv){
 		 		printf("write() wrote %d bytes\n", res);
 				printArray(buf, 334);
 			}
+
+			// Sleep required for non-blocking mode to smooth out audio
+			// TODO: Try to find a way to make the sleep period dynamic
+			usleep(7600);
 		}
 	}
 }
