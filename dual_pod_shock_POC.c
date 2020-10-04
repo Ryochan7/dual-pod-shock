@@ -19,8 +19,8 @@
 #define _powerRumbleLeft 0x00 /* Power Rumble Left */
 #define _flashON 0x00 /* LED Flash On */
 #define _flashOFF 0x00 /* LED Flash Off */
-#define _volLeft 0x40 /* Volume Headset Speaker Left */
-#define _volRight 0x40 /* Volume Headset Speaker Right */
+#define _volLeft 0x00 /* Volume Headset Speaker Left */
+#define _volRight 0x00 /* Volume Headset Speaker Right */
 #define _volMic	0x00 /* Volume Mic */
 #define _volSpeaker 0x98 /* Volume Built-in Speaker / 0x4d == Uppercase M (Mute?) */
 #define _R 0x10 /* Color Red */
@@ -101,8 +101,8 @@ int main(int argc, char **argv){
 			buf[74] = 0x00; buf[75] = 0x00; buf[76] = 0x00; buf[77] = 0x00; /* End Empty Frames */
 			buf[78] = lilEndianCounter & 255; /* Audio frame counter (endian 1)*/
 			buf[79] = (lilEndianCounter / 256) & 255; /* Audio frame counter (endian 2) */
-			//buf[80] = 0x02; /* 0x02 Speaker Mode On / 0x24 Headset Mode On*/
-			buf[80] = 0x24; /* 0x02 Speaker Mode On / 0x24 Headset Mode On*/
+			buf[80] = 0x02; /* 0x02 Speaker Mode On / 0x24 Headset Mode On*/
+			//buf[80] = 0x24; /* 0x02 Speaker Mode On / 0x24 Headset Mode On*/
 
 			// A U D I O  D A T A
 			for(indexAudioData = 0; indexAudioData < sizeof(audioData); indexAudioData++){
