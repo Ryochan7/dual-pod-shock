@@ -1,0 +1,2 @@
+gst-launch-1.0 -q filesrc location="LIL RICHIE - BANWORLD-HCYlrBVE91I.ogg"  ! decodebin ! audioconvert ! audioresample ! sbcenc ! "audio/x-sbc,rate=32000,channels=2,channel-mode=dual,blocks=16,subbands=8,allocation-method=loudness,bitpool=25" ! queue ! filesink location="audiofilename.sbc" sync=false
+
